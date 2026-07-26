@@ -93,7 +93,44 @@ int main() {
         Real curveDirtyPrice = bond.dirtyPrice();
         Real curveNPV = bond.NPV();
 
-        // 10. Output
+        // 10. Add credit spread analysis
+        ext::shared_ptr<SimpleQuote> creditSpread =
+            ext::make_shared<SimpleQuote>(0.0);
+
+        Handle<Quote> creditSpreadHandle(creditSpread);
+
+        ext::shared_ptr<YieldTermStructure> spreadedCurve =
+            ext::make_shared<ZeroSpreadedTermStructure>(
+                yieldCurveHandle,
+                creditSpreadHandle
+            );
+
+        Handle<YieldTermStructure> spreadedCurveHandle(spreadedCurve);
+
+        ext::shared_ptr<PricingEngine> spreadedBondEngine =
+            ext::make_shared<DiscountingBondEngine>(spreadedCurveHandle);
+
+        bond.setPricingEngine(spreadedBondEngine);
+
+        // Price with 0% credit spread
+        creditSpread->setValue(0.0);
+        Real zeroSpreadCleanPrice = bond.cleanPrice();
+        Real zeroSpreadDirtyPrice = bond.dirtyPrice();
+        Real zeroSpreadNPV = bond.NPV();
+
+        // Price with 1% credit spread
+        creditSpread->setValue(0.01);
+        Real onePercentSpreadCleanPrice = bond.cleanPrice();
+        Real onePercentSpreadDirtyPrice = bond.dirtyPrice();
+        Real onePercentSpreadNPV = bond.NPV();
+
+        Real spreadCleanPriceChange =
+            onePercentSpreadCleanPrice - zeroSpreadCleanPrice;
+
+        Real spreadNPVChange =
+            onePercentSpreadNPV - zeroSpreadNPV;
+
+        // 11. Output
         std::cout << std::fixed << std::setprecision(6);
 
         std::cout << "Valuation date: " << valueDate << "\n\n";
@@ -114,15 +151,35 @@ int main() {
         }
 
         std::cout << "\nPricing from single yield\n";
-        std::cout << "Clean price: " << yieldCleanPrice << "\n";
-        std::cout << "Accrued interest: " << accruedInterest << "\n";
-        std::cout << "Dirty price: " << yieldDirtyPrice << "\n";
+        std::cout << "Clean price per 100: " << yieldCleanPrice << "\n";
+        std::cout << "Accrued interest per 100: " << accruedInterest << "\n";
+        std::cout << "Dirty price per 100: " << yieldDirtyPrice << "\n";
 
         std::cout << "\nPricing from yield curve\n";
-        std::cout << "Clean price: " << curveCleanPrice << "\n";
-        std::cout << "Accrued interest: " << accruedInterest << "\n";
-        std::cout << "Dirty price: " << curveDirtyPrice << "\n";
+        std::cout << "Clean price per 100: " << curveCleanPrice << "\n";
+        std::cout << "Accrued interest per 100: " << accruedInterest << "\n";
+        std::cout << "Dirty price per 100: " << curveDirtyPrice << "\n";
         std::cout << "NPV: " << curveNPV << "\n";
+
+        std::cout << "\nCredit spread analysis\n";
+        std::cout << "Clean price with 0% spread per 100: "
+                  << zeroSpreadCleanPrice << "\n";
+        std::cout << "Dirty price with 0% spread per 100: "
+                  << zeroSpreadDirtyPrice << "\n";
+        std::cout << "NPV with 0% spread: "
+                  << zeroSpreadNPV << "\n\n";
+
+        std::cout << "Clean price with 1% spread per 100: "
+                  << onePercentSpreadCleanPrice << "\n";
+        std::cout << "Dirty price with 1% spread per 100: "
+                  << onePercentSpreadDirtyPrice << "\n";
+        std::cout << "NPV with 1% spread: "
+                  << onePercentSpreadNPV << "\n\n";
+
+        std::cout << "Clean price change from spread: "
+                  << spreadCleanPriceChange << "\n";
+        std::cout << "NPV change from spread: "
+                  << spreadNPVChange << "\n";
 
         return 0;
 
