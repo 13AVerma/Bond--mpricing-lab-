@@ -36,3 +36,20 @@ Date
 - Understand accrued interest
 - Understand yield curves
 - Understand credit spreads
+
+## Version 1
+
+This version creates a fixed-rate bond and prices it from a quoted yield.
+
+It calculates:
+
+- clean price
+- accrued interest
+- dirty price
+- coupon schedule
+
+Financial idea:
+
+Coupon rate creates the cashflows.  
+Yield tells us what return the market demands.  
+If yield > coupon, the bond price should be below par.
