@@ -30,7 +30,7 @@ int main() {
         Natural settlementDays = 3;
         Real faceAmount = 1000000.0;
         Rate couponRate = 0.02;
-        DayCounter dayCounter = Thirty360(Thirty360::BondBasis);
+        DayCounter bondDayCounter = Thirty360(Thirty360::BondBasis);
 
         // 5. Create fixed-rate bond
         FixedRateBond bond(
@@ -38,40 +38,91 @@ int main() {
             faceAmount,
             schedule,
             std::vector<Rate>{couponRate},
-            dayCounter
+            bondDayCounter
         );
 
-        // 6. Price from quoted yield
+        // 6. Price from one quoted yield
         Rate bondYield = 0.025;
 
-        Real cleanPrice = bond.cleanPrice(
+        Real yieldCleanPrice = bond.cleanPrice(
             bondYield,
-            dayCounter,
+            bondDayCounter,
             Compounded,
             Annual
         );
 
         Real accruedInterest = bond.accruedAmount();
-        Real dirtyPrice = cleanPrice + accruedInterest;
+        Real yieldDirtyPrice = yieldCleanPrice + accruedInterest;
 
-        // 7. Output
+        // 7. Build a zero yield curve
+        DayCounter curveDayCounter = Actual360();
+
+        std::vector<Date> curveDates;
+        curveDates.push_back(valueDate);
+        curveDates.push_back(calendar.advance(valueDate, Period(1, Years)));
+        curveDates.push_back(calendar.advance(valueDate, Period(2, Years)));
+        curveDates.push_back(calendar.advance(valueDate, Period(5, Years)));
+        curveDates.push_back(calendar.advance(valueDate, Period(10, Years)));
+        curveDates.push_back(calendar.advance(valueDate, Period(15, Years)));
+
+        std::vector<Rate> curveRates;
+        curveRates.push_back(0.015);
+        curveRates.push_back(0.015);
+        curveRates.push_back(0.018);
+        curveRates.push_back(0.022);
+        curveRates.push_back(0.025);
+        curveRates.push_back(0.028);
+
+        ext::shared_ptr<YieldTermStructure> yieldCurve =
+            ext::make_shared<InterpolatedZeroCurve<Linear>>(
+                curveDates,
+                curveRates,
+                curveDayCounter
+            );
+
+        Handle<YieldTermStructure> yieldCurveHandle(yieldCurve);
+
+        // 8. Attach a discounting engine to the bond
+        ext::shared_ptr<PricingEngine> bondEngine =
+            ext::make_shared<DiscountingBondEngine>(yieldCurveHandle);
+
+        bond.setPricingEngine(bondEngine);
+
+        // 9. Price using the yield curve
+        Real curveCleanPrice = bond.cleanPrice();
+        Real curveDirtyPrice = bond.dirtyPrice();
+        Real curveNPV = bond.NPV();
+
+        // 10. Output
+        std::cout << std::fixed << std::setprecision(6);
+
         std::cout << "Valuation date: " << valueDate << "\n\n";
 
         std::cout << "Bond details\n";
         std::cout << "Face amount: " << faceAmount << "\n";
         std::cout << "Coupon rate: " << io::rate(couponRate) << "\n";
-        std::cout << "Market yield: " << io::rate(bondYield) << "\n\n";
+        std::cout << "Single market yield: " << io::rate(bondYield) << "\n\n";
 
         std::cout << "Coupon schedule\n";
         for (const Date& d : schedule) {
             std::cout << d << "\n";
         }
 
-        std::cout << "\nPricing from yield\n";
-        std::cout << std::fixed << std::setprecision(6);
-        std::cout << "Clean price: " << cleanPrice << "\n";
+        std::cout << "\nZero curve inputs\n";
+        for (Size i = 0; i < curveDates.size(); ++i) {
+            std::cout << curveDates[i] << " : " << io::rate(curveRates[i]) << "\n";
+        }
+
+        std::cout << "\nPricing from single yield\n";
+        std::cout << "Clean price: " << yieldCleanPrice << "\n";
         std::cout << "Accrued interest: " << accruedInterest << "\n";
-        std::cout << "Dirty price: " << dirtyPrice << "\n";
+        std::cout << "Dirty price: " << yieldDirtyPrice << "\n";
+
+        std::cout << "\nPricing from yield curve\n";
+        std::cout << "Clean price: " << curveCleanPrice << "\n";
+        std::cout << "Accrued interest: " << accruedInterest << "\n";
+        std::cout << "Dirty price: " << curveDirtyPrice << "\n";
+        std::cout << "NPV: " << curveNPV << "\n";
 
         return 0;
 
