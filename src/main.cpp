@@ -141,11 +141,24 @@ int main() {
         std::cout << "Single market yield: " << io::rate(bondYield) << "\n\n";
 
         std::cout << "Coupon schedule\n";
-        for (const Date& d : schedule) {
-            std::cout << d << "\n";
-        }
+for (const Date& d : schedule) {
+    std::cout << d << "\n";
+}
 
-        std::cout << "\nZero curve inputs\n";
+std::cout << "\nBond cashflows\n";
+for (const auto& cashflow : bond.cashflows()) {
+    std::cout << cashflow->date()
+              << " : "
+              << cashflow->amount();
+
+    if (cashflow->hasOccurred(valueDate)) {
+        std::cout << "  (already occurred)";
+    }
+
+    std::cout << "\n";
+}
+
+std::cout << "\nZero curve inputs\n";
         for (Size i = 0; i < curveDates.size(); ++i) {
             std::cout << curveDates[i] << " : " << io::rate(curveRates[i]) << "\n";
         }
