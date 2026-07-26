@@ -15,7 +15,7 @@ int main() {
         // 2. Create calendar
         Calendar calendar = TARGET();
 
-        // 3. Create schedule
+        // 3. Create coupon schedule
         Schedule schedule = MakeSchedule()
             .from(Date(26, August, 2020))
             .to(Date(26, May, 2031))
@@ -50,8 +50,8 @@ int main() {
             Annual
         );
 
-        Real accrued = bond.accruedAmount();
-        Real dirtyPrice = cleanPrice + accrued;
+        Real accruedInterest = bond.accruedAmount();
+        Real dirtyPrice = cleanPrice + accruedInterest;
 
         // 7. Output
         std::cout << "Valuation date: " << valueDate << "\n\n";
@@ -59,9 +59,9 @@ int main() {
         std::cout << "Bond details\n";
         std::cout << "Face amount: " << faceAmount << "\n";
         std::cout << "Coupon rate: " << io::rate(couponRate) << "\n";
-        std::cout << "Yield: " << io::rate(bondYield) << "\n\n";
+        std::cout << "Market yield: " << io::rate(bondYield) << "\n\n";
 
-        std::cout << "Schedule\n";
+        std::cout << "Coupon schedule\n";
         for (const Date& d : schedule) {
             std::cout << d << "\n";
         }
@@ -69,7 +69,7 @@ int main() {
         std::cout << "\nPricing from yield\n";
         std::cout << std::fixed << std::setprecision(6);
         std::cout << "Clean price: " << cleanPrice << "\n";
-        std::cout << "Accrued interest: " << accrued << "\n";
+        std::cout << "Accrued interest: " << accruedInterest << "\n";
         std::cout << "Dirty price: " << dirtyPrice << "\n";
 
         return 0;
