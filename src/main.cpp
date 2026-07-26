@@ -1,6 +1,7 @@
 #include <ql/quantlib.hpp>
 #include <iostream>
 #include <iomanip>
+#include <vector>
 
 using namespace QuantLib;
 
